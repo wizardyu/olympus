@@ -63,7 +63,6 @@ public class LuceneServiceImpl implements LuceneService {
 	 * @return
 	 */
 	private static IndexWriter getIndexWriter(String appName) {
-		// Path path = FileSystems.getDefault().getPath(indexPath, appName);
 		File indexFile = new File(indexPath + appName);
 		Path path = indexFile.toPath();
 		IndexWriter writer = null;
