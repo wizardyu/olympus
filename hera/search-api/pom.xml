@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.wizardyu</groupId>
+		<artifactId>hera</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>search-api</artifactId>
+	<name>search-api</name>
+	<url>http://maven.apache.org</url>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<!-- 
+		mvn install:install-file -Dfile=I:/learn/workspace/olympus/hera/search-api/target/search-api-0.0.1-SNAPSHOT.jar -DgroupId=com.wizardyu -DartifactId=search-api -Dversion=0.0.1-SNAPSHOT -Dpackaging=jar
+		mvn install:install-file -Dfile=D:/lern/workspace/olympus-master/lib/dubbo-2.5.4-SNAPSHOT.jar -DgroupId=com.alibaba -DartifactId=dubbo -Dversion=2.5.4-SNAPSHOT -Dpackaging=jar
+		mvn install:install-file -Dfile=D:/lern/workspace/olympus-master/lib/IKAnalyzer-6.5.0.jar -DgroupId=com.seaboat -DartifactId=IKAnalyzer -Dversion=6.5.0 -Dpackaging=jar
+	 -->
+</project>
