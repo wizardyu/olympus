@@ -29,6 +29,8 @@ public class LuceneServiceImpl implements LuceneService {
 	private static int resultTotalNum = 0;
 	private static int maxPageNum = 0;
 	private static String indexPath = "/data/lucene/";
+	
+	
 
 	@Override
 	public void createDocument(List<LuceneFieldVO> luceneFieldVOList, String appName) {
