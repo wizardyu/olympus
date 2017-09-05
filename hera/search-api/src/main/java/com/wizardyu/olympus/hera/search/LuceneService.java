@@ -15,6 +15,8 @@ public interface LuceneService {
 	 */
 	public void createDocument(List<LuceneFieldVO> luceneFieldVOList,String appName);
 	
+	public List<LuceneFieldVO> search(String[] fields, String keyword, String appName);
+	
 	/**
 	 * 测试是否连接成功端口
 	 * @return
