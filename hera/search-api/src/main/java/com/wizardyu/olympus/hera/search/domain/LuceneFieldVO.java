@@ -8,10 +8,10 @@ package com.wizardyu.olympus.hera.search.domain;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.IntPoint;
-import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.SortField.Type;
 import org.apache.lucene.document.LongPoint;
-import org.apache.lucene.document.StringField;;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortField.Type;;
 
 public class LuceneFieldVO {
 
@@ -31,7 +31,8 @@ public class LuceneFieldVO {
 		super();
 	}
 
-	public LuceneFieldVO(String fieldName, String fieldValue, Type fieldType, boolean isCanSearch, boolean isCanSort, boolean isDesc) {
+	public LuceneFieldVO(String fieldName, String fieldValue, Type fieldType, boolean isCanSearch, boolean isCanSort,
+			boolean isDesc) {
 		this.fieldName = fieldName;
 		this.fieldValue = fieldValue;
 		this.fieldType = fieldType;
@@ -46,7 +47,7 @@ public class LuceneFieldVO {
 		} else if (fieldType == TYPE_LONG) {
 			return new LongPoint(fieldName, Long.valueOf(fieldValue));
 		} else {
-			return new StringField(fieldName, fieldValue, Store.YES);
+			return new TextField(fieldName, fieldValue, Store.YES);
 		}
 	}
 

@@ -1,8 +1,6 @@
 
 package com.wizardyu.dubbo.provider.search.impl;
 
-import static org.apache.lucene.document.TextField.TYPE_STORED;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -15,7 +13,6 @@ import java.util.Map;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.CorruptIndexException;
@@ -25,6 +22,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -42,6 +40,7 @@ import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.stereotype.Service;
+import org.wltea.analyzer.core.IKSegmenter;
 import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import com.wizardyu.olympus.hera.search.LuceneService;
@@ -76,8 +75,9 @@ public class LuceneServiceImpl implements LuceneService {
 							vo.setFieldValue("");
 						}
 						doc.add(vo.getFieldByType());
-						//存储
-						if (vo.getFieldType() == LuceneFieldVO.TYPE_INT || vo.getFieldType() == LuceneFieldVO.TYPE_LONG) {
+						// 存储
+						if (vo.getFieldType() == LuceneFieldVO.TYPE_INT
+								|| vo.getFieldType() == LuceneFieldVO.TYPE_LONG) {
 							doc.add(new StoredField(vo.getFieldName(), vo.getFieldValue()));
 						}
 						if (vo.isCanSort()) {
@@ -107,12 +107,29 @@ public class LuceneServiceImpl implements LuceneService {
 		try {
 			Document doc = new Document();
 			if (luceneFieldVOList != null) {
-				for (int i = 0; i < luceneFieldVOList.size(); i++) {
-					LuceneFieldVO vo = (LuceneFieldVO) luceneFieldVOList.get(i);
-					doc.add(new Field(vo.getFieldName(), vo.getFieldValue(), TYPE_STORED));
+				String idvalue = "";
+				for (int j = 0; j < luceneFieldVOList.size(); j++) {
+					LuceneFieldVO vo = (LuceneFieldVO) luceneFieldVOList.get(j);
+					if (vo.getFieldValue() == null || vo.getFieldValue().isEmpty()) {
+						vo.setFieldValue("");
+					}
+					doc.add(vo.getFieldByType());
+					// 存储
+					if (vo.getFieldType() == LuceneFieldVO.TYPE_INT || vo.getFieldType() == LuceneFieldVO.TYPE_LONG) {
+						doc.add(new StoredField(vo.getFieldName(), vo.getFieldValue()));
+					}
+					if (vo.isCanSort()) {
+						doc.add(new NumericDocValuesField(vo.getFieldName(), Long.valueOf(vo.getFieldValue())));
+					}
+					if (vo.getFieldName().equals("id")) {
+						idvalue = vo.getFieldValue();
+					}
+					// LuceneFieldVO vo = (LuceneFieldVO) luceneFieldVOList.get(i);
+					// doc.add(new Field(vo.getFieldName(), vo.getFieldValue(), TYPE_STORED));
 				}
+				writer.updateDocument(new Term("id", idvalue), doc);
 			}
-			writer.addDocument(doc);
+			// writer.addDocument(doc);
 			writer.commit();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -146,7 +163,8 @@ public class LuceneServiceImpl implements LuceneService {
 			if (analyzer == null) {
 				analyzer = new IKAnalyzer();
 			}
-			IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer).setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+			IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer)
+					.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 			writer = new IndexWriter(dir, indexWriterConfig);
 
 		} catch (Exception e) {
@@ -165,18 +183,18 @@ public class LuceneServiceImpl implements LuceneService {
 	 * @param scoreDoc
 	 *            分页时用
 	 */
-	public List<List<LuceneFieldVO>> search(String appName, String[] fields, BooleanClause.Occur[] clauses, SortField sortField, String searchStr, int pageSize, int pageNum, int maxSize) {
+	public List<List<LuceneFieldVO>> search(String appName, String[] fields, BooleanClause.Occur[] clauses,
+			SortField sortField, String searchStr, int pageSize, int pageNum, int maxSize) {
 		List<List<LuceneFieldVO>> result = new ArrayList<List<LuceneFieldVO>>();
 		IndexSearcher indexSearcher = null;
 		try {
 			// 创建索引搜索器,且只读
-			System.out.println(dirMap.get(appName).toString());
 			IndexReader indexReader = DirectoryReader.open(dirMap.get(appName));
 
 			indexSearcher = new IndexSearcher(indexReader);
-
 			Query query = MultiFieldQueryParser.parse(searchStr, fields, clauses, analyzer);
-			Sort sort = new Sort(sortField);
+
+			Sort sort = new Sort(SortField.FIELD_SCORE, sortField);
 			// 返回前number条记录
 			TopDocs topDocs = indexSearcher.search(query, maxSize, sort);
 			// 信息展示
@@ -186,18 +204,15 @@ public class LuceneServiceImpl implements LuceneService {
 			// 高亮显示
 			/*
 			 * 创建高亮器,使搜索的结果高亮显示 SimpleHTMLFormatter：用来控制你要加亮的关键字的高亮方式 此类有2个构造方法
-			 * 1：SimpleHTMLFormatter()默认的构造方法.加亮方式：<B>关键字</B>
-			 * 2：SimpleHTMLFormatter(String preTag, String
-			 * postTag).加亮方式：preTag关键字postTag
+			 * 1：SimpleHTMLFormatter()默认的构造方法.加亮方式：<B>关键字</B> 2：SimpleHTMLFormatter(String
+			 * preTag, String postTag).加亮方式：preTag关键字postTag
 			 */
 			Formatter formatter = new SimpleHTMLFormatter("<font color='red'>", "</font>");
 			/*
-			 * QueryScorer QueryScorer
-			 * 是内置的计分器。计分器的工作首先是将片段排序。QueryScorer使用的项是从用户输入的查询中得到的；
+			 * QueryScorer QueryScorer 是内置的计分器。计分器的工作首先是将片段排序。QueryScorer使用的项是从用户输入的查询中得到的；
 			 * 它会从原始输入的单词、词组和布尔查询中提取项，并且基于相应的加权因子（boost factor）给它们加权。
 			 * 为了便于QueryScoere使用，还必须对查询的原始形式进行重写。 比如，带通配符查询、模糊查询、前缀查询以及范围查询
-			 * 等，都被重写为BoolenaQuery中所使用的项。
-			 * 在将Query实例传递到QueryScorer之前，可以调用Query.rewrite
+			 * 等，都被重写为BoolenaQuery中所使用的项。 在将Query实例传递到QueryScorer之前，可以调用Query.rewrite
 			 * (IndexReader)方法来重写Query对象
 			 */
 			Scorer fragmentScorer = new QueryScorer(query);
@@ -236,7 +251,8 @@ public class LuceneServiceImpl implements LuceneService {
 					for (int w = 0; w < fields.length; w++) {
 						String fieldName = fields[w];
 						System.out.println(fieldName + ":" + analyzer + ":" + doc);
-						TokenStream tokenStream1 = analyzer.tokenStream(fieldName, new StringReader(doc.get(fieldName)));
+						TokenStream tokenStream1 = analyzer.tokenStream(fieldName,
+								new StringReader(doc.get(fieldName)));
 						String highlighterStr1 = highlighter.getBestFragment(tokenStream1, doc.get(fieldName));
 						String value = highlighterStr1 == null ? doc.get(fieldName) : highlighterStr1;
 						LuceneFieldVO vo1 = new LuceneFieldVO();
@@ -245,7 +261,8 @@ public class LuceneServiceImpl implements LuceneService {
 						lvolist.add(vo1);
 						// 把ID也查出来
 						String fieldName2 = "id";
-						TokenStream tokenStream2 = analyzer.tokenStream(fieldName2, new StringReader(doc.get(fieldName2)));
+						TokenStream tokenStream2 = analyzer.tokenStream(fieldName2,
+								new StringReader(doc.get(fieldName2)));
 						String highlighterStr2 = highlighter.getBestFragment(tokenStream2, doc.get(fieldName2));
 						String value2 = highlighterStr2 == null ? doc.get(fieldName2) : highlighterStr2;
 						LuceneFieldVO vo2 = new LuceneFieldVO();

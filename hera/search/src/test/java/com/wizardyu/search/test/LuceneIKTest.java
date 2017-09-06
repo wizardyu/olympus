@@ -17,7 +17,8 @@ import com.wizardyu.olympus.hera.search.LuceneService;
 import com.wizardyu.olympus.hera.search.domain.LuceneFieldVO;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "file:src/main/webapp/WEB-INF/applicationContext.xml", "file:src/main/webapp/WEB-INF/spring-mvc-servlet.xml" })
+@ContextConfiguration(locations = { "file:src/main/webapp/WEB-INF/applicationContext.xml",
+		"file:src/main/webapp/WEB-INF/spring-mvc-servlet.xml" })
 public class LuceneIKTest extends AbstractJUnit4SpringContextTests {
 
 	@Resource(name = "luceneService")
@@ -32,7 +33,7 @@ public class LuceneIKTest extends AbstractJUnit4SpringContextTests {
 	@Test
 	public void testLuceneService() {
 		List<List<LuceneFieldVO>> allList = new ArrayList<>();
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 50; i++) {	
 			List<LuceneFieldVO> list = new ArrayList<LuceneFieldVO>();
 
 			LuceneFieldVO luceneFieldVO = new LuceneFieldVO();
@@ -52,13 +53,14 @@ public class LuceneIKTest extends AbstractJUnit4SpringContextTests {
 		}
 
 		luceneService.updateDocument(allList, "test");
-		String[] fields = { "title" };
-		BooleanClause.Occur[] clauses = { BooleanClause.Occur.MUST };
-		
+
+		String[] fields = { "title", "id" };
+		BooleanClause.Occur[] clauses = { BooleanClause.Occur.SHOULD, BooleanClause.Occur.SHOULD };
+
 		SortField sortField = new SortField("id", SortField.Type.LONG, true);
-		String searchStr = "数值";
-		
-		luceneService.search("test", fields, clauses, sortField, searchStr, 5, 1, 20);
+		String searchStr = "数值44";
+
+		luceneService.search("test", fields, clauses, sortField, searchStr, 5, 0, 20);
 
 	}
 }
