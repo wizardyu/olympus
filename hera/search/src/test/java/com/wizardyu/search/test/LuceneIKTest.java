@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.SortField;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -15,8 +17,7 @@ import com.wizardyu.olympus.hera.search.LuceneService;
 import com.wizardyu.olympus.hera.search.domain.LuceneFieldVO;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "file:src/main/webapp/WEB-INF/applicationContext.xml",
-		"file:src/main/webapp/WEB-INF/spring-mvc-servlet.xml" })
+@ContextConfiguration(locations = { "file:src/main/webapp/WEB-INF/applicationContext.xml", "file:src/main/webapp/WEB-INF/spring-mvc-servlet.xml" })
 public class LuceneIKTest extends AbstractJUnit4SpringContextTests {
 
 	@Resource(name = "luceneService")
@@ -30,16 +31,34 @@ public class LuceneIKTest extends AbstractJUnit4SpringContextTests {
 
 	@Test
 	public void testLuceneService() {
-		List<LuceneFieldVO> list = new ArrayList<LuceneFieldVO>();
-		for (int i = 0; i < 100; i++) {
+		List<List<LuceneFieldVO>> allList = new ArrayList<>();
+		for (int i = 0; i < 50; i++) {
+			List<LuceneFieldVO> list = new ArrayList<LuceneFieldVO>();
+
 			LuceneFieldVO luceneFieldVO = new LuceneFieldVO();
-			luceneFieldVO.setFieldName("名称" + i);
+			luceneFieldVO.setFieldName("title");
 			luceneFieldVO.setFieldValue("数值" + i);
+			luceneFieldVO.setFieldType(LuceneFieldVO.TYPE_STRING);
 			list.add(luceneFieldVO);
+
+			LuceneFieldVO id = new LuceneFieldVO();
+			id.setFieldName("id");
+			id.setFieldValue("" + i);
+			id.setCanSort(true);
+			id.setFieldType(LuceneFieldVO.TYPE_INT);
+			list.add(id);
+
+			allList.add(list);
 		}
-		luceneService.createDocument(list, "test");
-		String[] fields = { "fieldName" };
-		luceneService.search(fields, "名", "test");
+
+		luceneService.updateDocument(allList, "test");
+		String[] fields = { "title" };
+		BooleanClause.Occur[] clauses = { BooleanClause.Occur.MUST };
+		
+		SortField sortField = new SortField("id", SortField.Type.LONG, true);
+		String searchStr = "数值";
+		
+		luceneService.search("test", fields, clauses, sortField, searchStr, 5, 1, 20);
 
 	}
 }
